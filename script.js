@@ -13,27 +13,25 @@ function InitialPosition(){
       lng: position.coords.longitude,
       };
     
-    var marker = L.marker([pos.lat, pos.lng]);
-    marker.addTo(mymap);
-    return marker
+    user_pos = L.marker([pos.lat, pos.lng]);
+    user_pos.addTo(mymap);
+
 
   },(err) => {
     const errorMessage = document.createElement("p");
     errorMessage.innerText = `Error: ${err.message}`;
     document.body.appendChild(errorMessage);
   });
-  console.log(mark)
-  return (mark)
 }
 
-function getCurrentLocation(marker){
+function getCurrentLocation(){
   navigator.geolocation.getCurrentPosition((position) => {
     const pos = {
       lat: position.coords.latitude,
       lng: position.coords.longitude,
       };
 
-    marker.setLatLng([pos.lat, pos.lng]);
+      user_pos.setLatLng([pos.lat, pos.lng]);
 
   },(err) => {
     const errorMessage = document.createElement("p");
@@ -42,21 +40,84 @@ function getCurrentLocation(marker){
   });
 }  
 
-let user_pos = InitialPosition()
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; 
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; 
+  return distance;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180)
+}
+
+function vibrarlejos(){
+  window.navigator.vibrate([1000, 4000])
+}
+
+function vibrarcerca(){
+  window.navigator.vibrate([2000, 500])
+}
+
+function track() {
+  let dist = getDistanceFromLatLonInKm(user_pos.getLatLng().lat,user_pos.getLatLng().lng,destino.getLatLng().lat,destino.getLatLng().lng);
+  //console.log(dist);
+  
+  if (dist > 0.4 && dist < 1)
+  {
+    console.log("tramo 1",dist)
+    vibrarlejos();
+  }
+  
+  if (dist < 0.4 )
+  {
+    console.log("tramo 2",dist)
+    vibrarcerca();
+  }
+  
+}
 
 
-let timerId = setTimeout(function tick() {  
-  console.log('tick'); 
-  getCurrentLocation(user_pos);
-  timerId = setTimeout(tick, 2000); 
-}, 2000);
-
+var user_pos;
+var destino = new L.marker();
+var dist1 = new L.circle();
+var dist2 = new L.circle();
+console.log(destino);
+InitialPosition();
+let timer2 = setTimeout(function tick() { 
+  getCurrentLocation()
+  timer2 = setTimeout(tick, 5000); 
+}, 5000);
 
 
 
 
 
 mymap.on('click', function(e) {
-  console.log(e);
+  destino.setLatLng(e.latlng);
+  dist1.setLatLng(destino.getLatLng());
+  dist1.setRadius(400);
+  dist2.setLatLng(destino.getLatLng());
+  dist2.setRadius(1000);
+  destino.addTo(mymap);
+  dist1.addTo(mymap);
+  dist2.addTo(mymap);
+
+  let timerId = setTimeout(function tick2() { 
+    track()
+    timerId = setTimeout(tick2, 5000); 
+  }, 5000);
+  
+  
+
+
 
 })
+
+
